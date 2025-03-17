@@ -307,14 +307,19 @@ function createFlashCardArray(size) {
 }
 
 function restoreData() {
-  if (!localStorage.flashCardArray) {
+  if (!localStorage.flashCardArrayClone) {
     flashCardArray = createFlashCardArray(1);
   } else {
-    serverDataContainer = localStorage.getItem("flashCardArray");
+    serverDataContainer = localStorage.getItem("flashCardArrayClone");
     serverDataContainer = JSON.parse(serverDataContainer);
     flashCardArray = serverDataContainer;
   }
 }
+
+window.addEventListener("beforeunload", function (event) {
+  // Save to a different local storage key to separate from the main Flashcard Baker
+  localStorage.setItem("flashCardArrayClone", JSON.stringify(flashCardArray));
+});
 
 function addRootFlashCardToPage() {
   let tableCellFront;
