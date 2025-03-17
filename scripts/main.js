@@ -291,43 +291,31 @@ function downloadCSV(csv, filename) {
 }
 
 function createFlashCardArray(size) {
-  let flashCardArrayClone = [];
+  // even though we pass the flashcards back in, we still set templateFlashCard equal to the array index always, in order to prevent overwriting front or back sides of flashcards
+  // and therefore we need to create the array with flashcards, instead of just creating an empty array
+  let flashCardTemplate;
+
+  const flashCardArray = [size];
   for (let i = 0; i < size; i++) {
-    flashCardArrayClone.push(new flashCard("", ""));
+    flashCardTemplate = new flashCard();
+    flashCardTemplate.front = "";
+    flashCardTemplate.back = "";
+    flashCardArray[i] = flashCardTemplate;
   }
-  return flashCardArrayClone;
+
+  return flashCardArray;
 }
 
 function restoreData() {
-  if (!localStorage.getItem("flashCardArrayClone")) {
-    flashCardArrayClone = createFlashCardArray(1);
+  if (!localStorage.flashCardArrayClone) {
+    // Changed from flashCardArray to flashCardArrayClone
+    flashCardArray = createFlashCardArray(1);
   } else {
-    serverDataContainer = localStorage.getItem("flashCardArrayClone");
+    serverDataContainer = localStorage.getItem("flashCardArrayClone"); // Changed key
     serverDataContainer = JSON.parse(serverDataContainer);
-    flashCardArrayClone = serverDataContainer;
+    flashCardArray = serverDataContainer;
   }
 }
-
-// Listen for global keypress events to capture Ctrl + Enter anywhere
-window.addEventListener("keydown", function (event) {
-  if (event.ctrlKey && event.key === "Enter") {
-    event.preventDefault(); // Prevent unintended behavior
-    addNewFlashCardToPage();
-  }
-});
-
-window.addEventListener("beforeunload", function (event) {
-  // Save to a different local storage key to separate from the main Flashcard Baker
-  localStorage.setItem(
-    "flashCardArrayClone",
-    JSON.stringify(flashCardArrayClone)
-  );
-});
-
-window.addEventListener("beforeunload", function (event) {
-  // Save to a different local storage key to separate from the main Flashcard Baker
-  localStorage.setItem("flashCardArrayClone", JSON.stringify(flashCardArray));
-});
 
 function addRootFlashCardToPage() {
   let tableCellFront;
@@ -336,16 +324,150 @@ function addRootFlashCardToPage() {
   let backInputCell;
   let currentFlashCard;
   let flashCardNumberDisplay;
+  let utilityButton; //called this because later I'll add more features to it
 
-  let tableRow = document.createElement("tr");
+  tableRow = document.createElement("tr");
   tableRow.classList.add("borderedElements");
+  tableRow.addEventListener("keydown", newFlashCardShortCut);
   document.getElementById("tableContainer").appendChild(tableRow);
-  tableRow.setAttribute("id", `flashCardTableRowClone${flashCardNumberClone}`);
+  tableRow.setAttribute("id", `flashCardTableRow0`);
 
-  flashCardNumberDisplay = document.createElement("div");
-  flashCardNumberDisplay.innerText = `${flashCardNumberClone + 1}`;
+  flashCardNumberDisplay = document.createElement("div"); //change to span if needed
+  flashCardNumberDisplay.innerText = `${flashCardNumber + 1}`; // +1 because we want to count our flashcards from 1 not 0, I could change the base way we slice ids, and count from 0 instead, but Im scared to break it
+
   flashCardNumberDisplay.classList.add("flashCardNumberDisplays");
+
   tableRow.appendChild(flashCardNumberDisplay);
+
+  utilityButton = document.createElement("button");
+  utilityButton.innerText = "utility button";
+  utilityButton.classList.add("utilityButtons");
+  utilityButton.id = `utilityButton${flashCardNumber}`;
+  utilityButton.tabIndex = "-1";
+
+  utilityButton.addEventListener("click", function copyForGPT(event) {
+    let utilityButtonNumber = event.target.id;
+    let flashCardNumber = utilityButtonNumber.slice(13);
+
+    let frontField = document.getElementById(
+      `flashCardFrontNumber${flashCardNumber}`
+    ).value;
+    let backField = document.getElementById(
+      `flashCardBackNumber${flashCardNumber}`
+    ).value;
+
+    let textToCopy = `Is the following flashcard true or false? : ${frontField} ${backField}`;
+    navigator.clipboard.writeText(textToCopy);
+
+    // setTimeout(function () {
+    //     window.open("https://chat.openai.com/", "_blank");
+    // }, 1);
+    // The above function is so that the window doesnt open instantly, since if it opens instantly the text wont be copied to the clipboard, the 1 represents 1 milisecond
+  });
+  // tableRow.appendChild(utilityButton);
+
+  // Creates the front table cell
+  tableCellFront = document.createElement("td");
+  tableCellFront.classList.add(
+    "borderedElements",
+    "tableCells",
+    "frontTabCell"
+  );
+  tableRow.appendChild(tableCellFront);
+
+  // Creates the back table cell
+  tableCellBack = document.createElement("td");
+  tableCellBack.classList.add("borderedElements", "tableCells", "backTabCell");
+  tableRow.appendChild(tableCellBack);
+
+  // It does this in case the flashCardArray contains cards saved to local storage
+  currentFlashCard = flashCardArray[flashCardNumber];
+
+  /* Creates the inputCell to put inside the front cell 
+    Also sets the front inputCells to any saved flashcards*/
+  frontInputCell = document.createElement("textarea");
+  frontInputCell.classList.add("frontInpCell");
+  frontInputCell.setAttribute("type", "text");
+  frontInputCell.setAttribute("id", `flashCardFrontNumber${flashCardNumber}`);
+  frontInputCell.addEventListener("input", modifyFlashCardArray);
+
+  frontInputCell.value = currentFlashCard.front;
+  tableCellFront.appendChild(frontInputCell);
+
+  /* Creates the inputCell to put inside the back cell 
+    Also sets the back inputCells to any saved flashcards*/
+  backInputCell = document.createElement("textarea");
+  backInputCell.classList.add("backInpCell");
+  backInputCell.setAttribute("type", "text");
+  backInputCell.setAttribute("id", `flashCardBackNumber${flashCardNumber}`);
+  backInputCell.addEventListener("input", modifyFlashCardArray);
+  backInputCell.value = currentFlashCard.back;
+  tableCellBack.appendChild(backInputCell);
+
+  flashCardNumber++;
+  tableRowNumber++;
+}
+
+function newFlashCardShortCut(event) {
+  if (event.ctrlKey && event.code === "Enter") {
+    addNewFlashCardToPage();
+  }
+}
+
+function addNewFlashCardToPage() {
+  let tableCellFront;
+  let tableCellBack;
+  let tableRow;
+  let frontInputCell;
+  let backInputCell;
+  let currentFlashCard;
+  let blankFlashCard;
+
+  tableRow = document.createElement("tr");
+  tableRow.classList.add("borderedElements", "flashcardFadeIn");
+  tableRow.addEventListener("keydown", newFlashCardShortCut);
+  document
+    .getElementById("tableContainer")
+    .insertBefore(
+      tableRow,
+      document.getElementById(`flashCardTableRow${tableRowNumber}`)
+    );
+
+  flashCardNumberDisplay = document.createElement("div"); //change to span if needed
+  flashCardNumberDisplay.innerText = `${flashCardNumber + 1}`;
+  flashCardNumberDisplay.classList.add(
+    "flashCardNumberDisplays",
+    "buttonFadeIn"
+  );
+  tableRow.appendChild(flashCardNumberDisplay);
+
+  utilityButton = document.createElement("button");
+  utilityButton.innerText = "utility button";
+  utilityButton.classList.add("utilityButtons", "buttonFadeIn");
+  utilityButton.id = `utilityButton${flashCardNumber}`;
+  utilityButton.tabIndex = "-1";
+
+  utilityButton.addEventListener("click", function copyForGPT(event) {
+    let utilityButtonNumber = event.target.id;
+    let flashCardNumber = utilityButtonNumber.slice(13);
+
+    let frontField = document.getElementById(
+      `flashCardFrontNumber${flashCardNumber}`
+    ).value;
+    let backField = document.getElementById(
+      `flashCardBackNumber${flashCardNumber}`
+    ).value;
+
+    let textToCopy = `Is the following flashcard true or false? : ${frontField} ${backField}`;
+    navigator.clipboard.writeText(textToCopy);
+
+    // setTimeout(function () {
+    //     window.open("https://chat.openai.com/", "_blank");
+    // }, 1);
+  });
+
+  // The above function is so that the window doesnt open instantly, since if it opens instantly the text wont be copied to the clipboard, the 1 represents 1 milisecond
+  // tableRow.appendChild(utilityButton);
 
   tableCellFront = document.createElement("td");
   tableCellFront.classList.add(
@@ -359,93 +481,55 @@ function addRootFlashCardToPage() {
   tableCellBack.classList.add("borderedElements", "tableCells", "backTabCell");
   tableRow.appendChild(tableCellBack);
 
-  currentFlashCard =
-    flashCardArrayClone[flashCardNumberClone] || new flashCard("", "");
+  // It does this in case the flashCardArray contains cards saved to local storage
 
+  if (flashCardArray[flashCardNumber] == undefined) {
+    blankFlashCard = new flashCard("", "");
+    flashCardArray.push(blankFlashCard);
+  }
+
+  currentFlashCard = flashCardArray[flashCardNumber];
+
+  /* Creates the inputCell to put inside the front cell 
+    Also sets the front inputCells to any saved flashcards*/
   frontInputCell = document.createElement("textarea");
   frontInputCell.classList.add("frontInpCell");
-  frontInputCell.setAttribute(
-    "id",
-    `flashCardFrontNumberClone${flashCardNumberClone}`
-  );
+  frontInputCell.setAttribute("type", "text");
+  frontInputCell.setAttribute("id", `flashCardFrontNumber${flashCardNumber}`);
   frontInputCell.addEventListener("input", modifyFlashCardArray);
   frontInputCell.value = currentFlashCard.front;
+
+  frontInputCell.addEventListener(
+    "input",
+    function () {
+      autoResize(frontInputCell);
+    },
+    false
+  );
   tableCellFront.appendChild(frontInputCell);
 
+  /* Creates the inputCell to put inside the back cell 
+    Also sets the back inputCells to any saved flashcards*/
   backInputCell = document.createElement("textarea");
   backInputCell.classList.add("backInpCell");
-  backInputCell.setAttribute(
-    "id",
-    `flashCardBackNumberClone${flashCardNumberClone}`
-  );
+  backInputCell.setAttribute("type", "text");
+  backInputCell.setAttribute("id", `flashCardBackNumber${flashCardNumber}`);
   backInputCell.addEventListener("input", modifyFlashCardArray);
   backInputCell.value = currentFlashCard.back;
+  backInputCell.addEventListener(
+    "input",
+    function () {
+      autoResize(backInputCell);
+    },
+    false
+  );
   tableCellBack.appendChild(backInputCell);
 
-  flashCardNumberClone++;
-  tableRowNumberClone++;
-}
+  document.getElementById(`flashCardFrontNumber${flashCardNumber}`).focus();
+  flashCardNumber++;
+  tableRowNumber++;
 
-function newFlashCardShortCut(event) {
-  if (event.ctrlKey && event.code === "Enter") {
-    addNewFlashCardToPage();
-  }
-}
-
-function addNewFlashCardToPage() {
-  let tableRow = document.createElement("tr");
-  tableRow.classList.add("borderedElements", "flashcardFadeIn");
-  document.getElementById("tableContainer").appendChild(tableRow);
-
-  let flashCardNumberDisplay = document.createElement("div");
-  flashCardNumberDisplay.innerText = `${flashCardNumberClone + 1}`;
-  flashCardNumberDisplay.classList.add("flashCardNumberDisplays");
-  tableRow.appendChild(flashCardNumberDisplay);
-
-  let tableCellFront = document.createElement("td");
-  tableCellFront.classList.add(
-    "borderedElements",
-    "tableCells",
-    "frontTabCell"
-  );
-  tableRow.appendChild(tableCellFront);
-
-  let tableCellBack = document.createElement("td");
-  tableCellBack.classList.add("borderedElements", "tableCells", "backTabCell");
-  tableRow.appendChild(tableCellBack);
-
-  let newFlashCard = new flashCard("", "");
-  flashCardArrayClone.push(newFlashCard);
-
-  let frontInputCell = document.createElement("textarea");
-  frontInputCell.classList.add("frontInpCell");
-  frontInputCell.setAttribute(
-    "id",
-    `flashCardFrontNumberClone${flashCardNumberClone}`
-  );
-  frontInputCell.addEventListener("input", modifyFlashCardArray);
-  tableCellFront.appendChild(frontInputCell);
-
-  let backInputCell = document.createElement("textarea");
-  backInputCell.classList.add("backInpCell");
-  backInputCell.setAttribute(
-    "id",
-    `flashCardBackNumberClone${flashCardNumberClone}`
-  );
-  backInputCell.addEventListener("input", modifyFlashCardArray);
-  tableCellBack.appendChild(backInputCell);
-
-  flashCardNumberClone++;
-  tableRowNumberClone++;
-
-  // Save updated flashcards
-  localStorage.setItem(
-    "flashCardArrayClone",
-    JSON.stringify(flashCardArrayClone)
-  );
-
-  // Auto-focus on the new flashcard's front input field
-  frontInputCell.focus();
+  localStorage.setItem("flashCardArrayClone", JSON.stringify(flashCardArray)); // Changed key
 }
 
 function modifyFlashCardArray(event) {
@@ -453,30 +537,24 @@ function modifyFlashCardArray(event) {
   let templateFlashCard = new flashCard();
 
   if (this.id.includes("Front")) {
-    idNumber = this.id.slice(26);
-    templateFlashCard = flashCardArrayClone[idNumber];
-    templateFlashCard.front = event.target.value;
-    flashCardArrayClone[idNumber] = templateFlashCard;
+    idNumber = this.id.slice(20);
+    templateFlashCard = flashCardArray[idNumber]; // this is so that we dont overwrite the back part of the card when we pass the templateFlashCard into the array
+    templateFlashCard.front = event.target.value; // take input text and sets it as the front of the flashcard
+    flashCardArray[idNumber] = templateFlashCard; // then finally pass the new flashcard into the array
   } else if (this.id.includes("Back")) {
-    idNumber = this.id.slice(25);
-    templateFlashCard = flashCardArrayClone[idNumber];
-    templateFlashCard.back = event.target.value;
-    flashCardArrayClone[idNumber] = templateFlashCard;
+    idNumber = this.id.slice(19);
+    templateFlashCard = flashCardArray[idNumber]; // this is so that we dont overwrite the front  part of the card when we pass the templateFlashCard into the array
+    templateFlashCard.back = event.target.value; // take input text and sets it as the front of the flashcard
+    flashCardArray[idNumber] = templateFlashCard; // then finally pass the new flashcard into the array
   }
-
-  // Save flashcards to the clone storage
-  localStorage.setItem(
-    "flashCardArrayClone",
-    JSON.stringify(flashCardArrayClone)
-  );
 }
 
 function createFlashCardTable() {
   addRootFlashCardToPage();
 
-  for (let i = 0; i < flashCardArrayClone.length; i++) {
-    let testFlashCard = flashCardArrayClone[i];
-    if (testFlashCard.front !== "" || testFlashCard.back !== "") {
+  for (let i = 0; i < flashCardArray.length; i++) {
+    testFlashCard = flashCardArray[i];
+    if (testFlashCard.front != "" || testFlashCard.back != "") {
       addNewFlashCardToPage();
     }
   }
@@ -489,9 +567,9 @@ function createTitleName() {
   document.body.appendChild(titleName);
 }
 
-let flashCardArrayClone;
-let flashCardNumberClone = 0;
-let tableRowNumberClone = 0;
+let flashCardArray;
+let flashCardNumber = 0;
+let tableRowNumber = 0;
 let testFlashCard;
 
 createTopBar();
@@ -502,9 +580,7 @@ restoreData();
 createFlashCardTable();
 
 window.addEventListener("beforeunload", function (event) {
-  // This block  makes it so that whenever you close the webpage, all the data gets saved
-
-  localStorage.setItem("flashCardArray", JSON.stringify(flashCardArray));
+  localStorage.setItem("flashCardArrayClone", JSON.stringify(flashCardArray)); // Changed key
 });
 
 // gpt carried somewhat here :((((())))) but the rest of the features were mine bitch
