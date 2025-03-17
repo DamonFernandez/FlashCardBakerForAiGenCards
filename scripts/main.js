@@ -391,6 +391,7 @@ function newFlashCardShortCut(event) {
     addNewFlashCardToPage();
   }
 }
+
 function addNewFlashCardToPage() {
   let tableRow = document.createElement("tr");
   tableRow.classList.add("borderedElements", "flashcardFadeIn");
@@ -402,7 +403,11 @@ function addNewFlashCardToPage() {
   tableRow.appendChild(flashCardNumberDisplay);
 
   let tableCellFront = document.createElement("td");
-  tableCellFront.classList.add("borderedElements", "tableCells", "frontTabCell");
+  tableCellFront.classList.add(
+    "borderedElements",
+    "tableCells",
+    "frontTabCell"
+  );
   tableRow.appendChild(tableCellFront);
 
   let tableCellBack = document.createElement("td");
@@ -414,13 +419,19 @@ function addNewFlashCardToPage() {
 
   let frontInputCell = document.createElement("textarea");
   frontInputCell.classList.add("frontInpCell");
-  frontInputCell.setAttribute("id", `flashCardFrontNumberClone${flashCardNumberClone}`);
+  frontInputCell.setAttribute(
+    "id",
+    `flashCardFrontNumberClone${flashCardNumberClone}`
+  );
   frontInputCell.addEventListener("input", modifyFlashCardArray);
   tableCellFront.appendChild(frontInputCell);
 
   let backInputCell = document.createElement("textarea");
   backInputCell.classList.add("backInpCell");
-  backInputCell.setAttribute("id", `flashCardBackNumberClone${flashCardNumberClone}`);
+  backInputCell.setAttribute(
+    "id",
+    `flashCardBackNumberClone${flashCardNumberClone}`
+  );
   backInputCell.addEventListener("input", modifyFlashCardArray);
   tableCellBack.appendChild(backInputCell);
 
@@ -428,76 +439,13 @@ function addNewFlashCardToPage() {
   tableRowNumberClone++;
 
   // Save updated flashcards
-  localStorage.setItem("flashCardArrayClone", JSON.stringify(flashCardArrayClone));
+  localStorage.setItem(
+    "flashCardArrayClone",
+    JSON.stringify(flashCardArrayClone)
+  );
 
   // Auto-focus on the new flashcard's front input field
   frontInputCell.focus();
-}
-
-  // The above function is so that the window doesnt open instantly, since if it opens instantly the text wont be copied to the clipboard, the 1 represents 1 milisecond
-  // tableRow.appendChild(utilityButton);
-
-  tableCellFront = document.createElement("td");
-  tableCellFront.classList.add(
-    "borderedElements",
-    "tableCells",
-    "frontTabCell"
-  );
-  tableRow.appendChild(tableCellFront);
-
-  tableCellBack = document.createElement("td");
-  tableCellBack.classList.add("borderedElements", "tableCells", "backTabCell");
-  tableRow.appendChild(tableCellBack);
-
-  // It does this in case the flashCardArray contains cards saved to local storage
-
-  if (flashCardArray[flashCardNumber] == undefined) {
-    blankFlashCard = new flashCard("", "");
-    flashCardArray.push(blankFlashCard);
-  }
-
-  currentFlashCard = flashCardArray[flashCardNumber];
-
-  /* Creates the inputCell to put inside the front cell 
-    Also sets the front inputCells to any saved flashcards*/
-  frontInputCell = document.createElement("textarea");
-  frontInputCell.classList.add("frontInpCell");
-  frontInputCell.setAttribute("type", "text");
-  frontInputCell.setAttribute("id", `flashCardFrontNumber${flashCardNumber}`);
-  frontInputCell.addEventListener("input", modifyFlashCardArray);
-  frontInputCell.value = currentFlashCard.front;
-
-  frontInputCell.addEventListener(
-    "input",
-    function () {
-      autoResize(frontInputCell);
-    },
-    false
-  );
-  tableCellFront.appendChild(frontInputCell);
-
-  /* Creates the inputCell to put inside the back cell 
-    Also sets the back inputCells to any saved flashcards*/
-  backInputCell = document.createElement("textarea");
-  backInputCell.classList.add("backInpCell");
-  backInputCell.setAttribute("type", "text");
-  backInputCell.setAttribute("id", `flashCardBackNumber${flashCardNumber}`);
-  backInputCell.addEventListener("input", modifyFlashCardArray);
-  backInputCell.value = currentFlashCard.back;
-  backInputCell.addEventListener(
-    "input",
-    function () {
-      autoResize(backInputCell);
-    },
-    false
-  );
-  tableCellBack.appendChild(backInputCell);
-
-  document.getElementById(`flashCardFrontNumber${flashCardNumber}`).focus();
-  flashCardNumber++;
-  tableRowNumber++;
-
-  localStorage.setItem("flashCardArray", JSON.stringify(flashCardArray));
 }
 
 function modifyFlashCardArray(event) {
