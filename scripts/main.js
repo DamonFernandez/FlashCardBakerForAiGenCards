@@ -308,6 +308,14 @@ function restoreData() {
   }
 }
 
+// Listen for global keypress events to capture Ctrl + Enter anywhere
+window.addEventListener("keydown", function (event) {
+  if (event.ctrlKey && event.key === "Enter") {
+    event.preventDefault(); // Prevent unintended behavior
+    addNewFlashCardToPage();
+  }
+});
+
 window.addEventListener("beforeunload", function (event) {
   // Save to a different local storage key to separate from the main Flashcard Baker
   localStorage.setItem(
@@ -383,58 +391,48 @@ function newFlashCardShortCut(event) {
     addNewFlashCardToPage();
   }
 }
-
 function addNewFlashCardToPage() {
-  let tableCellFront;
-  let tableCellBack;
-  let tableRow;
-  let frontInputCell;
-  let backInputCell;
-  let currentFlashCard;
-  let blankFlashCard;
-
-  tableRow = document.createElement("tr");
+  let tableRow = document.createElement("tr");
   tableRow.classList.add("borderedElements", "flashcardFadeIn");
-  tableRow.addEventListener("keydown", newFlashCardShortCut);
-  document
-    .getElementById("tableContainer")
-    .insertBefore(
-      tableRow,
-      document.getElementById(`flashCardTableRow${tableRowNumber}`)
-    );
+  document.getElementById("tableContainer").appendChild(tableRow);
 
-  flashCardNumberDisplay = document.createElement("div"); //change to span if needed
-  flashCardNumberDisplay.innerText = `${flashCardNumber + 1}`;
-  flashCardNumberDisplay.classList.add(
-    "flashCardNumberDisplays",
-    "buttonFadeIn"
-  );
+  let flashCardNumberDisplay = document.createElement("div");
+  flashCardNumberDisplay.innerText = `${flashCardNumberClone + 1}`;
+  flashCardNumberDisplay.classList.add("flashCardNumberDisplays");
   tableRow.appendChild(flashCardNumberDisplay);
 
-  utilityButton = document.createElement("button");
-  utilityButton.innerText = "utility button";
-  utilityButton.classList.add("utilityButtons", "buttonFadeIn");
-  utilityButton.id = `utilityButton${flashCardNumber}`;
-  utilityButton.tabIndex = "-1";
+  let tableCellFront = document.createElement("td");
+  tableCellFront.classList.add("borderedElements", "tableCells", "frontTabCell");
+  tableRow.appendChild(tableCellFront);
 
-  utilityButton.addEventListener("click", function copyForGPT(event) {
-    let utilityButtonNumber = event.target.id;
-    let flashCardNumber = utilityButtonNumber.slice(13);
+  let tableCellBack = document.createElement("td");
+  tableCellBack.classList.add("borderedElements", "tableCells", "backTabCell");
+  tableRow.appendChild(tableCellBack);
 
-    let frontField = document.getElementById(
-      `flashCardFrontNumber${flashCardNumber}`
-    ).value;
-    let backField = document.getElementById(
-      `flashCardBackNumber${flashCardNumber}`
-    ).value;
+  let newFlashCard = new flashCard("", "");
+  flashCardArrayClone.push(newFlashCard);
 
-    let textToCopy = `Is the following flashcard true or false? : ${frontField} ${backField}`;
-    navigator.clipboard.writeText(textToCopy);
+  let frontInputCell = document.createElement("textarea");
+  frontInputCell.classList.add("frontInpCell");
+  frontInputCell.setAttribute("id", `flashCardFrontNumberClone${flashCardNumberClone}`);
+  frontInputCell.addEventListener("input", modifyFlashCardArray);
+  tableCellFront.appendChild(frontInputCell);
 
-    // setTimeout(function () {
-    //     window.open("https://chat.openai.com/", "_blank");
-    // }, 1);
-  });
+  let backInputCell = document.createElement("textarea");
+  backInputCell.classList.add("backInpCell");
+  backInputCell.setAttribute("id", `flashCardBackNumberClone${flashCardNumberClone}`);
+  backInputCell.addEventListener("input", modifyFlashCardArray);
+  tableCellBack.appendChild(backInputCell);
+
+  flashCardNumberClone++;
+  tableRowNumberClone++;
+
+  // Save updated flashcards
+  localStorage.setItem("flashCardArrayClone", JSON.stringify(flashCardArrayClone));
+
+  // Auto-focus on the new flashcard's front input field
+  frontInputCell.focus();
+}
 
   // The above function is so that the window doesnt open instantly, since if it opens instantly the text wont be copied to the clipboard, the 1 represents 1 milisecond
   // tableRow.appendChild(utilityButton);
